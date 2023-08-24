@@ -12,11 +12,11 @@ def post_list(request: HttpRequest) -> HttpResponse:
 
 
 def post_detail(request: HttpRequest, id: int) -> HttpResponse:
-    posts = get_object_or_404(Post,
-                              id=id,
-                              status=Post.Status.PUBLISHED)
+    post = get_object_or_404(Post,
+                             id=id,
+                             status=Post.Status.PUBLISHED)
 
     return render(request,
                   'blog/post/detail.html',
-                  {"posts": posts}
+                  {"post": post}
                   )
