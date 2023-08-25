@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.urls import reverse
 
 
 class PublishedManager(models.Manager):
@@ -33,3 +34,7 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        print(f"REVERSE URL: {reverse('blog:post_detail', args=[self.id])}")
+        return reverse('blog:post_detail', args=[self.id])
