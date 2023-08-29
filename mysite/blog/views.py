@@ -1,10 +1,19 @@
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
 from .models import Post
 
 
 def post_list(request: HttpRequest) -> HttpResponse:
-    posts = Post.published.all()
+    post_list = Post.published.all()
+    paginator = Paginator(post_list, 3)
+    page_number = request.GET.get('page_n', 1)
+    try:
+        posts = paginator.page(page_number)
+    except PageNotAnInteger:
+        posts = paginator.page(1)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
     context = {
         'posts': posts,
     }
@@ -12,6 +21,7 @@ def post_list(request: HttpRequest) -> HttpResponse:
 
 
 def post_detail(request: HttpRequest, year, month, day, post) -> HttpResponse:
+    print(year, month, day, post)
     post = get_object_or_404(Post,
                              status=Post.Status.PUBLISHED,
                              slug=post,
