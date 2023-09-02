@@ -1,9 +1,11 @@
+from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView
 
 from .models import Post
+from .forms import EmailPostForm
 
 
 class PostListView(ListView):
@@ -31,7 +33,6 @@ def post_list(request: HttpRequest) -> HttpResponse:
 
 
 def post_detail(request: HttpRequest, year, month, day, post) -> HttpResponse:
-    print(year, month, day, post)
     post = get_object_or_404(Post,
                              status=Post.Status.PUBLISHED,
                              slug=post,
@@ -42,3 +43,31 @@ def post_detail(request: HttpRequest, year, month, day, post) -> HttpResponse:
                   'blog/post/detail.html',
                   {"post": post}
                   )
+
+
+def post_share(request, post_id):
+    post = get_object_or_404(Post,
+                             id=post_id,
+                             status=Post.Status.PUBLISHED,
+                             )
+    sent = False
+    if request.method == "POST":
+        form = EmailPostForm(request.POST)
+
+        if form.is_valid():
+            cd = form.cleaned_data
+            post_url = request.build_absolute_uri(post.get_absolute_url())
+            subject = f"{cd['name']} recommends you read {post.title}"
+            message = f"Read {post.title} at {post_url}\n\n{cd['name']}\'s comments: {cd['comments']}"
+            send_mail(subject, message, "aloriansol@gmail.com", [cd['to']])
+            sent = True
+    else:
+        form = EmailPostForm()
+
+    context = {
+        'post': post,
+        'form': form,
+        'sent': sent,
+    }
+    return render(request, 'blog/post/share.html', context=context)
+
