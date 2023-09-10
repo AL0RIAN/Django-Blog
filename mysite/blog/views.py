@@ -4,9 +4,9 @@ from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView
 from django.views.decorators.http import require_POST
-
 from .models import Post, Comment
 from .forms import EmailPostForm, CommentForm
+from taggit.models import Tag
 
 
 class PostListView(ListView):
@@ -16,9 +16,13 @@ class PostListView(ListView):
     template_name = 'blog/post/list.html'
 
 
-def post_list(request: HttpRequest) -> HttpResponse:
-    post_list = Post.published.all()
-    paginator = Paginator(post_list, 3)
+def post_list(request: HttpRequest, tag_slug=None) -> HttpResponse:
+    post_lst = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_lst = post_lst.filter(tags__in=[tag])
+    paginator = Paginator(post_lst, 3)
     page_number = request.GET.get('page_n', 1)
 
     try:
@@ -27,8 +31,10 @@ def post_list(request: HttpRequest) -> HttpResponse:
         posts = paginator.page(1)
     except EmptyPage:
         posts = paginator.page(paginator.num_pages)
+
     context = {
         'posts': posts,
+        'tag': tag,
     }
     return render(request, 'blog/post/list.html', context=context)
 
@@ -97,4 +103,3 @@ def post_comment(request, post_id):
         'comment': comment,
     }
     return render(request, 'blog/post/comment.html', context=context)
-
